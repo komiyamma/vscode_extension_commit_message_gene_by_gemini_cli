@@ -72,7 +72,7 @@ gemini -p "《prompt》" -m "gemini-2.5-flash" -y
 Main sources:
 
 - `src/extension.ts` — VS Code activation and command registration
-- `gemini cli_proxy/` — Windows helper that calls gemini cli
+- `gemini_proxy/` — Windows helper that calls gemini cli
 
 ## License
 

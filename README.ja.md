@@ -72,7 +72,7 @@
 主要ソース:
 
 - `src/extension.ts` — VS Code のアクティベーションとコマンド登録
-- `gemini cli_proxy/` — gemini cli を呼び出す Windows ヘルパー
+- `gemini_proxy/` — gemini cli を呼び出す Windows ヘルパー
 
 ## ライセンス
 
