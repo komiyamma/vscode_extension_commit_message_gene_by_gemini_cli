@@ -1,6 +1,6 @@
 [To English Version README](README.md)
 
-[![Version](https://img.shields.io/badge/version-v0.1.7-4094ff.svg)](https://marketplace.visualstudio.com/items?itemName=komiyamma.commit-message-gene-by-gemini-cli)
+[![Version](https://img.shields.io/badge/version-v0.1.8-4094ff.svg)](https://marketplace.visualstudio.com/items?itemName=komiyamma.commit-message-gene-by-gemini-cli)
 [![MIT License](https://img.shields.io/badge/license-MIT-blue.svg?style=flat)](LICENSE)
 ![Windows 10|11](https://img.shields.io/badge/Windows-_10_|_11-6479ff.svg?logo=windows&logoColor=white)
 
@@ -17,10 +17,12 @@
   - コマンドパレット (Ctrl+Shift+P) で「Commit message generation」と入力して検索できます
 
 - ソース管理ビューに起動ボタンを追加
-  - コミット入力欄のツールバー（menus.scm/inputBox）
+  - コミット入力欄のツールバー（menus.scm/inputBox）  
+  [![Commit Input Box Button](images/button.png)](images/button.png)
   - 「ソース管理」タイトルバーのツールバー（menus.scm/title。表示幅が狭い場合は … の中）
 
-- 実行中はウィンドウ下部のステータスバーにスピナーを表示
+- 実行中はウィンドウ下部のステータスバーにスピナーを表示  
+  [![Commit StatusBar](images/statusbar.png)](images/statusbar.png)
 
 ## 要件
 

@@ -1,6 +1,6 @@
 [To Japanese Version README](README.ja.md)
 
-[![Version](https://img.shields.io/badge/version-v0.1.7-4094ff.svg)](https://marketplace.visualstudio.com/items?itemName=komiyamma.commit-message-gene-by-gemini-cli)
+[![Version](https://img.shields.io/badge/version-v0.1.8-4094ff.svg)](https://marketplace.visualstudio.com/items?itemName=komiyamma.commit-message-gene-by-gemini-cli)
 [![MIT License](https://img.shields.io/badge/license-MIT-blue.svg?style=flat)](LICENSE)
 ![Windows 10|11](https://img.shields.io/badge/Windows-_10_|_11-6479ff.svg?logo=windows&logoColor=white)
 
@@ -17,10 +17,12 @@ This extension is a lightweight VS Code extension that calls the local Gemini CL
 	- You can search for it by typing "Commit message generation" in the Command Palette (Ctrl+Shift+P)
 
 - Add launch buttons in the Source Control view
-	- Commit input box toolbar (menus.scm/inputBox)
+	- Commit input box toolbar (menus.scm/inputBox)  
+  [![Commit Input Box Button](images/button.png)](images/button.png)
 	- Source Control title bar toolbar (menus.scm/title; may appear under … when narrow)
 
-- While running, a spinner is shown in the status bar at the bottom of the window
+- While running, a spinner is shown in the status bar at the bottom of the window  
+  [![Commit StatusBar](images/statusbar.png)](images/statusbar.png)
 
 ## Requirements
 
