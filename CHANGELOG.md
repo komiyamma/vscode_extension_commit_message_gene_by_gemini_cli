@@ -1,5 +1,12 @@
 # Change Log
 
+## 0.1.7
+
+- Add buttons to run the command in Source Control (commit input box toolbar and Source Control title bar)
+- Docs: explain button locations and status bar spinner; align EN/JA README
+- Manifest/Menus polish: command icon, activation event, schema fixes
+- Bump version to 0.1.7
+
 ## 0.1.6
 
 - Fixed discrepancy between Readme version badge and actual version

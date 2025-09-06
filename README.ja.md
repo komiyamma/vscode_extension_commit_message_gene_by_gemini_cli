@@ -16,6 +16,12 @@
   - 「Commit message generation by gemini cli」(`commit-message-gene-by-gemini-cli.runGeminiCLICmd`)
   - コマンドパレット (Ctrl+Shift+P) で「Commit message generation」と入力して検索できます
 
+- ソース管理ビューに起動ボタンを追加
+  - コミット入力欄のツールバー（menus.scm/inputBox）
+  - 「ソース管理」タイトルバーのツールバー（menus.scm/title。表示幅が狭い場合は … の中）
+
+- 実行中はウィンドウ下部のステータスバーにスピナーを表示
+
 ## 要件
 
 - 生成後のメッセージは以下に反映されます:
@@ -33,9 +39,10 @@
 
 ## 使い方
 
-1. 次のコマンドを実行:
-   - 「Commit message generation by gemini cli」(`commit-message-gene-by-gemini-cli.runGeminiCLICmd`)
-   - コマンドパレット (Ctrl+Shift+P) で「Commit message generation」と入力して検索できます
+1. 次のいずれかで実行:
+  - 「Commit message generation by gemini cli」(`commit-message-gene-by-gemini-cli.runGeminiCLICmd`)
+  - コマンドパレット (Ctrl+Shift+P) で「Commit message generation」と入力して検索
+  - ソース管理ビューのツールバーのボタン（コミット入力欄／タイトルバー）をクリック（※幅が狭いと … 内）
 2. 実行中は出力パネルの「gemini cli exec output」を確認します。
 3. 完了すると、生成メッセージはソース管理のコミットメッセージ入力欄に挿入されます。
 

@@ -16,6 +16,12 @@ This extension is a lightweight VS Code extension that calls the local Gemini CL
 	- "Commit message generation by gemini cli" (`commit-message-gene-by-gemini-cli.runGeminiCLICmd`)
 	- You can search for it by typing "Commit message generation" in the Command Palette (Ctrl+Shift+P)
 
+- Add launch buttons in the Source Control view
+	- Commit input box toolbar (menus.scm/inputBox)
+	- Source Control title bar toolbar (menus.scm/title; may appear under … when narrow)
+
+- While running, a spinner is shown in the status bar at the bottom of the window
+
 ## Requirements
 
 - After generation, the message is reflected as follows:
@@ -33,9 +39,10 @@ gemini -p "《prompt》" -m "gemini-2.5-flash" -y
 
 ## How to use
 
-1. Run the following command:
+1. Run in any of the following ways:
 	- "Commit message generation by gemini cli" (`commit-message-gene-by-gemini-cli.runGeminiCLICmd`)
-	- You can search for it by typing "Commit message generation" in the Command Palette (Ctrl+Shift+P)
+	- Search "Commit message generation" in the Command Palette (Ctrl+Shift+P)
+	- Click the toolbar button in the Source Control view (commit input box or title bar; may be under … when narrow)
 2. While running, check the Output panel "gemini cli exec output".
 3. When finished, the generated message is inserted into the commit message input field in Source Control.
 
