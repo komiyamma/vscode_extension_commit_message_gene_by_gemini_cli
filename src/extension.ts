@@ -66,7 +66,7 @@ export function activate(context: vscode.ExtensionContext) {
 	}
 
 	// gemini_proxy.exeを直接呼び出し、utf8で標準出力・標準エラーをターミナルに順次出力するコマンド
-	const geminiDisposable = vscode.commands.registerCommand('commit-message-gene-by-gemini.runGeminiCLICmd', async () => {
+	const geminiDisposable = vscode.commands.registerCommand('commit-message-gene-by-gemini-cli.runGeminiCLICmd', async () => {
 		const output = vscode.window.createOutputChannel(M.outputChannel());
 		// 出力パネルは自動表示しない（必要なときだけ手動で開く）
 		// output.show(true);
