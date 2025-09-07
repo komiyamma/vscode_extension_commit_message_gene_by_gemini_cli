@@ -1,5 +1,9 @@
 # Change Log
 
+## 0.2.2
+
+- Extracted Codex-dependent parts into separate files and unified the source between the Codex and Gemini CLI versions to improve maintainability.
+
 ## 0.2.1
 
 - メッセージ生成中に再度コマンドが実行された時は、前回のものは破棄されるようになった。
