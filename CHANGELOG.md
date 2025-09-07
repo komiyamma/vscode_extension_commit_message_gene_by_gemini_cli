@@ -1,5 +1,9 @@
 # Change Log
 
+## 0.2.1
+
+- If the command is run again while a message is being generated, the previous generation is canceled.
+
 ## 0.1.9
 
 - Readme.md has been made more concise and content has been redesigned.
