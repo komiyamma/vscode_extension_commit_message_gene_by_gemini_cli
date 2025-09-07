@@ -2,7 +2,7 @@
 
 ## 0.2.2
 
-- Extracted Codex-dependent parts into separate files and unified the source between the Codex and Gemini CLI versions to improve maintainability.
+- codexに依存する部分を別ファイルに切り出し、codex版とgemini cli版で同一のソースにすることで、メンテナンス性を向上させた。
 
 ## 0.2.1
 
