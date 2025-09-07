@@ -1,7 +1,7 @@
 // The module 'vscode' contains the VS Code extensibility API
 // Import the module and reference it with the alias vscode in your code below
 import * as vscode from 'vscode';
-import { spawn } from 'child_process';
+import { spawn, ChildProcess } from 'child_process';
 import * as path from 'path';
 
 // 言語判定: VS Code のUI言語が日本語(ja*)かどうか
@@ -33,6 +33,47 @@ const M = {
 // This method is called when your extension is activated
 // Your extension is activated the very first time the command is executed
 export function activate(context: vscode.ExtensionContext) {
+	// ワークスペースごとに直近の子プロセスと共有StatusBarItemを保持
+	// 後発を優先して先行をキャンセルしつつ、ステータスバーは1つだけ表示する
+	const activeRuns = new Map<string, { proc: ChildProcess, runId: number, statusItem: vscode.StatusBarItem }>();
+	let runCounter = 0;
+
+	// Windows考慮の確実なKill（まずproc.kill、未終了なら強制Kill）
+	const killProcess = (proc: ChildProcess) => {
+		try {
+			const pid = proc.pid;
+			if (!pid) { return; }
+			// まずは通常の kill（Windows でも有効）
+			try { proc.kill(); } catch { /* noop */ }
+			// 少し待っても生きていたら強制終了
+			setTimeout(() => {
+				try {
+					if (proc.exitCode === null) {
+						if (process.platform === 'win32') {
+							const cp = require('child_process');
+							cp.spawn('taskkill', ['/PID', String(pid), '/T', '/F'], { stdio: 'ignore', windowsHide: true });
+						} else {
+							try { process.kill(pid, 'SIGKILL'); } catch { /* noop */ }
+						}
+					}
+				} catch { /* noop */ }
+			}, 200);
+		} catch { /* noop */ }
+	};
+
+	// 旧プロセスの終了を待つ（最大 timeoutMs）
+	const killAndWait = (proc: ChildProcess, timeoutMs = 2000) => new Promise<void>((resolve) => {
+		try {
+			if (proc.exitCode !== null) { return resolve(); }
+			killProcess(proc);
+			const onClose = () => resolve();
+			proc.once('close', onClose);
+			setTimeout(() => {
+				try { proc.removeListener('close', onClose); } catch { /* noop */ }
+				resolve();
+			}, timeoutMs);
+		} catch { resolve(); }
+	});
 	// コミットメッセージ欄に安全に設定するヘルパー
 	async function setCommitMessage(message: string, output: vscode.OutputChannel) {
 		try {
@@ -71,14 +112,28 @@ export function activate(context: vscode.ExtensionContext) {
 		// 出力パネルは自動表示しない（必要なときだけ手動で開く）
 		// output.show(true);
 
-		// ステータスバーに実行中スピナーを表示
-		const statusItem = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Left, 1000);
+		const proxyPath = path.join(__dirname, 'gemini_proxy.exe');
+		const localeArg = isJapanese() ? 'ja' : 'en';
+		const workspacePath = vscode.workspace.workspaceFolders?.[0]?.uri.fsPath ?? '<no-workspace>';
+
+		// 既存実行があればキャンセル。ステータスバーは再利用（重複表示を防止）
+		const prev = activeRuns.get(workspacePath);
+		let statusItem: vscode.StatusBarItem | undefined = prev?.statusItem;
+		const myRunId = ++runCounter;
+		if (!statusItem) {
+			statusItem = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Left, 1000);
+		}
 		statusItem.text = M.status.generating();
 		statusItem.tooltip = M.status.generatingTip();
 		statusItem.show();
-		const proxyPath = path.join(__dirname, 'gemini_proxy.exe');
-		const localeArg = isJapanese() ? 'ja' : 'en';
-		const proc = spawn(proxyPath, ['utf8', localeArg], { cwd: vscode.workspace.workspaceFolders?.[0].uri.fsPath });
+		if (prev?.proc) {
+			// 旧runがclose時に結果処理・ステータス破棄しないよう、最新runIdを差し替え
+			activeRuns.set(workspacePath, { proc: prev.proc, runId: myRunId, statusItem });
+			await killAndWait(prev.proc, 1500);
+		}
+
+		const proc = spawn(proxyPath, ['utf8', localeArg], { cwd: vscode.workspace.workspaceFolders?.[0]?.uri.fsPath });
+		activeRuns.set(workspacePath, { proc, runId: myRunId, statusItem });
 		let buffer = '';
 		// マーカー行を出力チャンネルに表示しないためのヘルパー
 		const containsMarker = (line: string) => {
@@ -114,13 +169,25 @@ export function activate(context: vscode.ExtensionContext) {
 		});
 		proc.on('error', (err) => {
 			output.appendLine(M.gemini.runError(err.message));
-			statusItem.hide();
-			statusItem.dispose();
+			// 最新の実行のみステータスバーを閉じる
+			const current = activeRuns.get(workspacePath);
+			if (current && current.runId === myRunId) {
+				current.statusItem.hide();
+				current.statusItem.dispose();
+				activeRuns.delete(workspacePath);
+			}
 		});
 		proc.on('close', async (code) => {
 			output.appendLine(M.gemini.closed(code));
-			statusItem.hide();
-			statusItem.dispose();
+			// 最新の実行でなければ結果・ステータス処理は破棄
+			const current = activeRuns.get(workspacePath);
+			if (!current || current.runId !== myRunId) {
+				return;
+			}
+			// 自分が最新なのでステータスを閉じて登録解除
+			current.statusItem.hide();
+			current.statusItem.dispose();
+			activeRuns.delete(workspacePath);
 			// 最終行に改行がなかった場合の残余をフラッシュ（必要なら）
 			if (stdoutRemainder && !containsMarker(stdoutRemainder)) {
 				output.appendLine(stdoutRemainder);
