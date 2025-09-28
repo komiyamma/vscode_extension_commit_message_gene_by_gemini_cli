@@ -7,7 +7,7 @@
 
 # コミットメッセージジェネレーター (by Gemini CLI)
 
-リポジトリの変更から Conventional Commits 形式のコミットメッセージを自動生成して、ソース管理の入力欄へ挿入する VS Code 拡張です。  
+リポジトリの変更から Conventional Commits 形式のコミットメッセージを自動生成して、ソース管理の入力欄へ挿入する VSCode 拡張です。  
 Gemini CLIxが動作する環境であれば、利用可能です。  
 GitHub Copilot が使えない環境でも手軽に使えます。
 
@@ -29,7 +29,7 @@ GitHub Copilot が使えない環境でも手軽に使えます。
 
 - Windows 10/11（バンドルされるヘルパーは Windows 用）
 - Gemini CLI をグローバルインストールし、`%APPDATA%\npm\gemini.cmd` が存在すること
-- VS Code の組み込み Git 拡張が有効であること
+- VSCode の組み込み Git 拡張が有効であること
 - 出力の確認は Output パネル「commit message gene」
 
 ## ライセンス

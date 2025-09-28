@@ -7,7 +7,7 @@
 
 # Commit Message Generator (by Gemini CLI)
 
-This VS Code extension automatically generates a Conventional Commits-style commit message from repository changes and inserts it into the Source Control input box.  
+This VSCode extension automatically generates a Conventional Commits-style commit message from repository changes and inserts it into the Source Control input box.  
 If Gemini CLI runs in your environment, you can use this extension.  
 It’s handy even where GitHub Copilot isn’t available.
 
@@ -29,7 +29,7 @@ It’s handy even where GitHub Copilot isn’t available.
 
 - Windows 10/11 (the bundled helper targets Windows)
 - Install Gemini CLI globally so `%APPDATA%\npm\gemini.cmd` exists
-- Built-in VS Code Git extension is enabled
+- Built-in VSCode Git extension is enabled
 - Check output in the Output panel "commit message gene"
 
 ## License
