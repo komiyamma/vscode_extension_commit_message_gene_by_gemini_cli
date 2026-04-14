@@ -31,6 +31,7 @@ It’s handy even where GitHub Copilot isn’t available.
 - Gemini CLI stores its auth state under `~/.gemini` by default, or under `%GEMINI_CLI_HOME%/.gemini` if `GEMINI_CLI_HOME` is set
 - Built-in VSCode Git extension is enabled
 - Check output in the Output panel "commit message gene"
+- If you want verbose diagnostics, enable `commitMessageGene.debugLogging` in VS Code settings or set `COMMIT_MESSAGE_GENE_DEBUG=1`
 
 ## License
 

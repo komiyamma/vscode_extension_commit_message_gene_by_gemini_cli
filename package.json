@@ -25,6 +25,16 @@
   ],
   "main": "./out/extension.js",
   "contributes": {
+    "configuration": {
+      "title": "Commit message gene by gemini-cli",
+      "properties": {
+        "commitMessageGene.debugLogging": {
+          "type": "boolean",
+          "default": false,
+          "description": "Write diagnostic logs to the Output panel and developer console."
+        }
+      }
+    },
     "commands": [
       {
         "command": "commit-message-gene-by-gemini-cli.runGeminiCLICmd",

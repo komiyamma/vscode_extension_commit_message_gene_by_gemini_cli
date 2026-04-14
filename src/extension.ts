@@ -10,7 +10,7 @@ const MAX_SECTION_LENGTH = 3000;
 // Soft cap for git stdout so large diffs do not blow up the prompt or buffers.
 const GIT_STDOUT_SOFT_LIMIT = 40000;
 // Gemini CLI core currently works well with Flash for short commit messages.
-const DEFAULT_MODEL = 'gemini-2.5-flash';
+const MODEL_CANDIDATES = ['gemini-3-flash', 'gemini-2.5-flash'] as const;
 
 type GitRepositoryLike = {
 	rootUri?: vscode.Uri;
@@ -158,7 +158,8 @@ export async function activate(context: vscode.ExtensionContext) {
 	const output = vscode.window.createOutputChannel('commit message gene');
 	const statusSpinner = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Left, 1000);
 	context.subscriptions.push(output, statusSpinner);
-	const debugEnabled = process.env.COMMIT_MESSAGE_GENE_DEBUG === '1';
+	const debugEnabled = process.env.COMMIT_MESSAGE_GENE_DEBUG === '1'
+		|| vscode.workspace.getConfiguration('commitMessageGene').get<boolean>('debugLogging') === true;
 
 	const debug = (message: string) => {
 		if (!debugEnabled) {
@@ -219,19 +220,9 @@ export async function activate(context: vscode.ExtensionContext) {
 
 			const { generator, authType } = await (clientPool?.getClient(workspaceDir) ?? Promise.reject(new Error('Gemini client pool is not available.')));
 			debug(`gemini authType=${authType}`);
-
-			const request = {
-				model: DEFAULT_MODEL,
-				contents: [{ role: 'user', parts: [{ text: prompt }] }],
-				config: {
-					temperature: 0.2,
-					topP: 1,
-					maxOutputTokens: 256,
-				},
-			};
-
-			const result = await generator.generateContent(request, `commit-message-${Date.now()}`, 'main');
-			debug(`generateContent completed: ${describeResult(result)}`);
+			output.appendLine(`[info] model candidates: ${MODEL_CANDIDATES.join(', ')}`);
+			const { result, model } = await generateCommitMessage(generator, prompt, debug, output);
+			debug(`generateContent completed: model=${model} ${describeResult(result)}`);
 
 			if (!isCurrentRun(activeRuns, workspaceKey, currentRunId)) {
 				return;
@@ -296,6 +287,64 @@ function isCurrentRun(activeRuns: Map<string, WorkspaceRunEntry>, workspaceKey: 
 	return activeRuns.get(workspaceKey)?.runId === runId;
 }
 
+type GenerateCommitMessageResult = {
+	result: unknown;
+	model: string;
+};
+
+async function generateCommitMessage(
+	generator: GeminiRuntime['generator'],
+	prompt: string,
+	debug: (message: string) => void,
+	output: vscode.OutputChannel,
+): Promise<GenerateCommitMessageResult> {
+	const requestBase = {
+		contents: [{ role: 'user', parts: [{ text: prompt }] }],
+		config: {
+			temperature: 0.2,
+			topP: 1,
+			maxOutputTokens: 256,
+		},
+	};
+
+	for (let index = 0; index < MODEL_CANDIDATES.length; index += 1) {
+		const model = MODEL_CANDIDATES[index];
+		const request = {
+			...requestBase,
+			model,
+		};
+
+		output.appendLine(`[info] generateContent attempt ${index + 1}/${MODEL_CANDIDATES.length}: model=${model}`);
+		debug(`generateContent request: model=${model} promptLength=${prompt.length}`);
+
+		try {
+			const result = await generator.generateContent(request, `commit-message-${Date.now()}`, 'main');
+			return {
+				result,
+				model,
+			};
+		} catch (error) {
+			const description = describeError(error);
+			debug(`generateContent failed: model=${model} error=${description}`);
+			output.appendLine(`[warn] generateContent failed on model=${model}`);
+			output.appendLine(`[warn] ${oneLine(description)}`);
+			const retryAfterSeconds = extractRetryAfterSeconds(description);
+			if (retryAfterSeconds !== undefined) {
+				output.appendLine(`[hint] model capacity may recover after about ${retryAfterSeconds}s`);
+			}
+
+			if (index < MODEL_CANDIDATES.length - 1 && shouldRetryWithFallbackModel(error)) {
+				output.appendLine(`[info] retrying with fallback model=${MODEL_CANDIDATES[index + 1]}`);
+				continue;
+			}
+
+			throw error;
+		}
+	}
+
+	throw new Error(`All model attempts failed: ${MODEL_CANDIDATES.join(', ')}`);
+}
+
 function describeResult(result: unknown): string {
 	if (!result || typeof result !== 'object') {
 		return typeof result;
@@ -305,6 +354,48 @@ function describeResult(result: unknown): string {
 	const partCount = Array.isArray(parts) ? parts.length : 0;
 	const responseId = typeof candidate.responseId === 'string' ? candidate.responseId : '';
 	return responseId ? `object responseId=${responseId} parts=${partCount}` : `object parts=${partCount}`;
+}
+
+function describeError(error: unknown): string {
+	if (error instanceof Error) {
+		return error.stack || `${error.name}: ${error.message}`;
+	}
+	if (typeof error === 'object' && error !== null) {
+		try {
+			return JSON.stringify(error);
+		} catch {
+			return Object.prototype.toString.call(error);
+		}
+	}
+	return String(error);
+}
+
+function oneLine(message: string): string {
+	return message.replace(/\s+/g, ' ').trim();
+}
+
+function shouldRetryWithFallbackModel(error: unknown): boolean {
+	const message = toErrorMessage(error).toLowerCase();
+	return [
+		'capacity',
+		'quota',
+		'rate limit',
+		'resource exhausted',
+		'unavailable',
+		'too many requests',
+		'429',
+		'model not found',
+		'unsupported model',
+	].some(token => message.includes(token));
+}
+
+function extractRetryAfterSeconds(message: string): number | undefined {
+	const match = /(?:reset after|retry after)\s+(\d+)\s*s/i.exec(message);
+	if (!match) {
+		return undefined;
+	}
+	const value = Number(match[1]);
+	return Number.isFinite(value) ? value : undefined;
 }
 
 function extractGeneratedMessage(result: unknown): string | undefined {
@@ -444,6 +535,7 @@ function findRepoByFsPath(repos: GitRepositoryLike[], targetFsPath: string) {
 
 function reportError(message: string, output: vscode.OutputChannel) {
 	output.appendLine(message);
+	output.show(true);
 	vscode.window.showErrorMessage(message);
 }
 

@@ -31,6 +31,7 @@ GitHub Copilot が使えない環境でも手軽に使えます。
 - Gemini CLI の認証状態は既定で `~/.gemini` に保存され、`GEMINI_CLI_HOME` が設定されている場合はその配下の `.gemini` を参照します
 - VSCode の組み込み Git 拡張が有効であること
 - 出力の確認は Output パネル「commit message gene」
+- 詳細ログが必要な場合は、VS Code 設定で `commitMessageGene.debugLogging` を有効にするか、`COMMIT_MESSAGE_GENE_DEBUG=1` を設定してください
 
 ## ライセンス
 
