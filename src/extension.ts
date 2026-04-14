@@ -60,6 +60,20 @@ type WorkspaceClientEntry = {
 	ready: Promise<GeminiRuntime>;
 };
 
+type ErrorDiagnostics = {
+	name: string;
+	message: string;
+	status?: number;
+	code?: string | number;
+	stack?: string;
+};
+
+const ERROR_DIAGNOSTICS_LOGGED = '__commitMessageGeneErrorDiagnosticsLogged';
+
+type LoggedError = Error & {
+	[ERROR_DIAGNOSTICS_LOGGED]?: boolean;
+};
+
 class GeminiClientPool {
 	private readonly clients = new Map<string, WorkspaceClientEntry>();
 
@@ -239,6 +253,9 @@ export async function activate(context: vscode.ExtensionContext) {
 		} catch (error) {
 			const message = error instanceof Error ? error.message : String(error);
 			debug(`error: ${message}`);
+			if (!wasErrorDiagnosticsLogged(error)) {
+				appendErrorDiagnostics(output, 'commit-message generation run failed', error);
+			}
 			reportError(M.errors.failed(message), output);
 		} finally {
 			const current = activeRuns.get(workspaceKey);
@@ -325,16 +342,21 @@ async function generateCommitMessage(
 			};
 		} catch (error) {
 			const description = describeError(error);
+			const diagnostics = getErrorDiagnostics(error);
 			debug(`generateContent failed: model=${model} error=${description}`);
 			output.appendLine(`[warn] generateContent failed on model=${model}`);
-			output.appendLine(`[warn] ${oneLine(description)}`);
+			output.appendLine(`[warn] name=${diagnostics.name} status=${formatOptionalValue(diagnostics.status)} code=${formatOptionalValue(diagnostics.code)}`);
+			output.appendLine(`[warn] message=${diagnostics.message}`);
+			if (diagnostics.stack) {
+				output.appendLine(`[warn] stack=${oneLine(diagnostics.stack)}`);
+			}
 			const retryAfterSeconds = extractRetryAfterSeconds(description);
 			if (retryAfterSeconds !== undefined) {
 				output.appendLine(`[hint] model capacity may recover after about ${retryAfterSeconds}s`);
 			}
 
 			if (index < MODEL_CANDIDATES.length - 1 && shouldRetryWithFallbackModel(error)) {
-				output.appendLine(`[info] retrying with fallback model=${MODEL_CANDIDATES[index + 1]}`);
+				output.appendLine(`[info] model lookup failed, retrying with fallback model=${MODEL_CANDIDATES[index + 1]}`);
 				continue;
 			}
 
@@ -370,23 +392,79 @@ function describeError(error: unknown): string {
 	return String(error);
 }
 
+function getErrorDiagnostics(error: unknown): ErrorDiagnostics {
+	const diagnostics: ErrorDiagnostics = {
+		name: 'unknown',
+		message: toErrorMessage(error),
+	};
+
+	if (error instanceof Error) {
+		diagnostics.name = error.name || diagnostics.name;
+		if (error.stack) {
+			diagnostics.stack = error.stack;
+		}
+	}
+
+	if (typeof error === 'object' && error !== null) {
+		const candidate = error as {
+			name?: unknown;
+			message?: unknown;
+			status?: unknown;
+			code?: unknown;
+			response?: { status?: unknown };
+			stack?: unknown;
+		};
+		if (typeof candidate.name === 'string') {
+			diagnostics.name = candidate.name;
+		}
+		if (typeof candidate.message === 'string') {
+			diagnostics.message = candidate.message;
+		}
+		if (typeof candidate.status === 'number') {
+			diagnostics.status = candidate.status;
+		} else if (typeof candidate.response?.status === 'number') {
+			diagnostics.status = candidate.response.status;
+		}
+		if (typeof candidate.code === 'number' || typeof candidate.code === 'string') {
+			diagnostics.code = candidate.code;
+		}
+		if (!diagnostics.stack && typeof candidate.stack === 'string') {
+			diagnostics.stack = candidate.stack;
+		}
+	}
+
+	return diagnostics;
+}
+
+function formatOptionalValue(value: string | number | undefined): string {
+	return value === undefined ? 'n/a' : String(value);
+}
+
 function oneLine(message: string): string {
 	return message.replace(/\s+/g, ' ').trim();
 }
 
 function shouldRetryWithFallbackModel(error: unknown): boolean {
-	const message = toErrorMessage(error).toLowerCase();
-	return [
-		'capacity',
-		'quota',
-		'rate limit',
-		'resource exhausted',
-		'unavailable',
-		'too many requests',
-		'429',
-		'model not found',
-		'unsupported model',
-	].some(token => message.includes(token));
+	const diagnostics = getErrorDiagnostics(error);
+	const message = diagnostics.message.toLowerCase();
+	return (
+		diagnostics.name === 'ModelNotFoundError'
+		|| diagnostics.status === 404
+		|| diagnostics.code === 404
+		|| diagnostics.code === '404'
+		|| message.includes('requested entity was not found')
+		|| message.includes('model not found')
+		|| message.includes('unsupported model')
+		|| [
+			'capacity',
+			'quota',
+			'rate limit',
+			'resource exhausted',
+			'unavailable',
+			'too many requests',
+			'429',
+		].some(token => message.includes(token))
+	);
 }
 
 function extractRetryAfterSeconds(message: string): number | undefined {
@@ -537,6 +615,37 @@ function reportError(message: string, output: vscode.OutputChannel) {
 	output.appendLine(message);
 	output.show(true);
 	vscode.window.showErrorMessage(message);
+}
+
+function appendErrorDiagnostics(output: vscode.OutputChannel, context: string, error: unknown) {
+	const diagnostics = getErrorDiagnostics(error);
+	markErrorDiagnosticsLogged(error);
+	output.appendLine(`[error] ${context}`);
+	output.appendLine(`[error] name=${diagnostics.name}`);
+	output.appendLine(`[error] status=${formatOptionalValue(diagnostics.status)}`);
+	output.appendLine(`[error] code=${formatOptionalValue(diagnostics.code)}`);
+	output.appendLine(`[error] message=${diagnostics.message}`);
+	if (diagnostics.stack) {
+		output.appendLine(`[error] stack=${oneLine(diagnostics.stack)}`);
+	}
+}
+
+function markErrorDiagnosticsLogged(error: unknown): void {
+	if (typeof error !== 'object' || error === null) {
+		return;
+	}
+	try {
+		(error as LoggedError)[ERROR_DIAGNOSTICS_LOGGED] = true;
+	} catch {
+		// Ignore frozen errors; the diagnostics were already written.
+	}
+}
+
+function wasErrorDiagnosticsLogged(error: unknown): boolean {
+	if (typeof error !== 'object' || error === null) {
+		return false;
+	}
+	return (error as LoggedError)[ERROR_DIAGNOSTICS_LOGGED] === true;
 }
 
 async function getGitApi(): Promise<any | undefined> {

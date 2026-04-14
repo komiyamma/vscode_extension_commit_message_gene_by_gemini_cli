@@ -3,7 +3,7 @@
   "name": "commit-message-gene-by-gemini-cli",
   "displayName": "commit-message-gene-by-gemini-cli",
   "description": "Generates commit messages from Git changes using Gemini CLI authentication via @google/gemini-cli-core.",
-  "version": "0.3.1",
+  "version": "0.3.3",
   "repository": {
     "type": "git",
     "url": "https://github.com/komiyamma/vscode_extension_commit_message_gene_by_gemini_cli"
@@ -22,6 +22,9 @@
   },
   "activationEvents": [
     "onCommand:commit-message-gene-by-gemini-cli.runGeminiCLICmd"
+  ],
+  "enabledApiProposals": [
+    "contribSourceControlInputBoxMenu"
   ],
   "main": "./out/extension.js",
   "contributes": {
