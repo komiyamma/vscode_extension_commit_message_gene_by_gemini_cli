@@ -1,6 +1,6 @@
 [To English Version README](README.md)
 
-[![Version](https://img.shields.io/badge/version-v0.2.4-4094ff.svg)](https://marketplace.visualstudio.com/items?itemName=komiyamma.commit-message-gene-by-gemini-cli)
+[![Version](https://img.shields.io/badge/version-v0.3.1-4094ff.svg)](https://marketplace.visualstudio.com/items?itemName=komiyamma.commit-message-gene-by-gemini-cli)
 [![MIT License](https://img.shields.io/badge/license-MIT-blue.svg?style=flat)](LICENSE)
 
 
@@ -34,4 +34,4 @@ GitHub Copilot が使えない環境でも手軽に使えます。
 
 ## ライセンス
 
-MIT License © 2025 komiyamma
+MIT License © 2025-2026 komiyamma

@@ -1,5 +1,10 @@
 # Change Log
 
+## 0.3.1
+
+- Switched authentication to Gemini CLI Core so the extension reuses Gemini CLI sign-in state from `~/.gemini` instead of requiring an API key.
+- Updated the documentation to reflect the new Gemini CLI authentication flow and supported environments.
+
 ## 0.2.4
 
 - Improved process shutdown handling when multiple comment generations are triggered concurrently.
