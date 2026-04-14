@@ -9,8 +9,8 @@ const execFileAsync = promisify(execFile);
 const MAX_SECTION_LENGTH = 3000;
 // Soft cap for git stdout so large diffs do not blow up the prompt or buffers.
 const GIT_STDOUT_SOFT_LIMIT = 40000;
-// Gemini CLI core currently works well with Flash for short commit messages.
-const MODEL_CANDIDATES = ['gemini-3-flash', 'gemini-2.5-flash'] as const;
+// Gemini CLI core is most stable with Flash for short commit messages.
+const MODEL_CANDIDATES = ['gemini-2.5-flash'] as const;
 
 type GitRepositoryLike = {
 	rootUri?: vscode.Uri;
@@ -324,47 +324,64 @@ async function generateCommitMessage(
 		},
 	};
 
-	for (let index = 0; index < MODEL_CANDIDATES.length; index += 1) {
-		const model = MODEL_CANDIDATES[index];
-		const request = {
-			...requestBase,
-			model,
-		};
+	let lastError: Error | undefined;
 
-		output.appendLine(`[info] generateContent attempt ${index + 1}/${MODEL_CANDIDATES.length}: model=${model}`);
-		debug(`generateContent request: model=${model} promptLength=${prompt.length}`);
-
-		try {
-			const result = await generator.generateContent(request, `commit-message-${Date.now()}`, 'main');
-			return {
-				result,
+	for (let pass = 0; pass < 2; pass += 1) {
+		for (let index = 0; index < MODEL_CANDIDATES.length; index += 1) {
+			const model = MODEL_CANDIDATES[index];
+			const request = {
+				...requestBase,
 				model,
 			};
-		} catch (error) {
-			const description = describeError(error);
-			const diagnostics = getErrorDiagnostics(error);
-			debug(`generateContent failed: model=${model} error=${description}`);
-			output.appendLine(`[warn] generateContent failed on model=${model}`);
-			output.appendLine(`[warn] name=${diagnostics.name} status=${formatOptionalValue(diagnostics.status)} code=${formatOptionalValue(diagnostics.code)}`);
-			output.appendLine(`[warn] message=${diagnostics.message}`);
-			if (diagnostics.stack) {
-				output.appendLine(`[warn] stack=${oneLine(diagnostics.stack)}`);
-			}
-			const retryAfterSeconds = extractRetryAfterSeconds(description);
-			if (retryAfterSeconds !== undefined) {
-				output.appendLine(`[hint] model capacity may recover after about ${retryAfterSeconds}s`);
-			}
 
-			if (index < MODEL_CANDIDATES.length - 1 && shouldRetryWithFallbackModel(error)) {
-				output.appendLine(`[info] model lookup failed, retrying with fallback model=${MODEL_CANDIDATES[index + 1]}`);
-				continue;
-			}
+			output.appendLine(`[info] generateContent attempt ${index + 1}/${MODEL_CANDIDATES.length}: model=${model}${pass > 0 ? ' (retry)' : ''}`);
+			debug(`generateContent request: model=${model} promptLength=${prompt.length} pass=${pass + 1}`);
 
-			throw error;
+			try {
+				const result = await generator.generateContent(request, `commit-message-${Date.now()}`, 'main');
+				const finalMessage = extractGeneratedMessage(result)?.trim();
+				if (finalMessage) {
+					return {
+						result,
+						model,
+					};
+				}
+
+				lastError = new Error(`Model ${model} returned no valid commit message.`);
+				debug(`generateContent returned empty content: model=${model}`);
+				output.appendLine(`[warn] generateContent returned empty content on model=${model}`);
+				if (index < MODEL_CANDIDATES.length - 1) {
+					output.appendLine(`[info] trying fallback model=${MODEL_CANDIDATES[index + 1]}`);
+					continue;
+				}
+			} catch (error) {
+				const description = describeError(error);
+				const diagnostics = getErrorDiagnostics(error);
+				debug(`generateContent failed: model=${model} error=${description}`);
+				output.appendLine(`[warn] generateContent failed on model=${model}`);
+				output.appendLine(`[warn] name=${diagnostics.name} status=${formatOptionalValue(diagnostics.status)} code=${formatOptionalValue(diagnostics.code)}`);
+				output.appendLine(`[warn] message=${diagnostics.message}`);
+				if (diagnostics.stack) {
+					output.appendLine(`[warn] stack=${oneLine(diagnostics.stack)}`);
+				}
+				const retryAfterSeconds = extractRetryAfterSeconds(description);
+				if (retryAfterSeconds !== undefined) {
+					output.appendLine(`[hint] model capacity may recover after about ${retryAfterSeconds}s`);
+				}
+
+				if (index < MODEL_CANDIDATES.length - 1 && shouldRetryWithFallbackModel(error)) {
+					output.appendLine(`[info] model lookup failed, retrying with fallback model=${MODEL_CANDIDATES[index + 1]}`);
+					continue;
+				}
+
+				lastError = error instanceof Error ? error : new Error(toErrorMessage(error));
+			}
 		}
+
+		break;
 	}
 
-	throw new Error(`All model attempts failed: ${MODEL_CANDIDATES.join(', ')}`);
+	throw lastError ?? new Error(`All model attempts failed: ${MODEL_CANDIDATES.join(', ')}`);
 }
 
 function describeResult(result: unknown): string {
