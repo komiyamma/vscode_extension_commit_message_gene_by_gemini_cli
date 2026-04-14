@@ -2,7 +2,7 @@
   "publisher": "komiyamma",
   "name": "commit-message-gene-by-gemini-cli",
   "displayName": "commit-message-gene-by-gemini-cli",
-  "description": "Generates commit messages in gemini-cli environments. It is intended for use when 'Github Copilot' is no longer available or with 'AWS kiro'.",
+  "description": "Generates commit messages from Git changes using Gemini CLI authentication via @google/gemini-cli-core.",
   "version": "0.2.4",
   "repository": {
     "type": "git",
@@ -17,6 +17,9 @@
   "categories": [
     "Other"
   ],
+  "dependencies": {
+    "@google/gemini-cli-core": "0.37.2"
+  },
   "activationEvents": [
     "onCommand:commit-message-gene-by-gemini-cli.runGeminiCLICmd"
   ],
