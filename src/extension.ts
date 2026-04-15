@@ -172,17 +172,7 @@ export async function activate(context: vscode.ExtensionContext) {
 	const output = vscode.window.createOutputChannel('commit message gene');
 	const statusSpinner = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Left, 1000);
 	context.subscriptions.push(output, statusSpinner);
-	const debugEnabled = process.env.COMMIT_MESSAGE_GENE_DEBUG === '1'
-		|| vscode.workspace.getConfiguration('commitMessageGene').get<boolean>('debugLogging') === true;
-
-	const debug = (message: string) => {
-		if (!debugEnabled) {
-			return;
-		}
-		// const line = `[debug] ${message}`;
-		// console.log(line);
-		// output.appendLine(line);
-	};
+	const debug = (_message: string) => {};
 
 	clientPool = new GeminiClientPool(debug);
 	context.subscriptions.push(
@@ -848,7 +838,7 @@ async function runGitCommandWithSoftLimit(args: string[], cwd: string, limit: nu
 function buildPrompt(gitContext: string): string {
 	const config = vscode.workspace.getConfiguration();
 	const japanese = isJapanese();
-	const configKey = japanese ? 'commitMessageGene.prompt.intro.ja' : 'commitMessageGene.prompt.intro.en';
+	const configKey = japanese ? 'commitMessageGeneGemini.prompt.intro.ja' : 'commitMessageGeneGemini.prompt.intro.en';
 	const defaultIntro = japanese ? DEFAULT_INTRO_JA : DEFAULT_INTRO_EN;
 	const configuredIntro = config.get<string[]>(configKey);
 	const resolvedIntro = Array.isArray(configuredIntro)
