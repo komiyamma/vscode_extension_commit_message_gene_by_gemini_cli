@@ -179,9 +179,9 @@ export async function activate(context: vscode.ExtensionContext) {
 		if (!debugEnabled) {
 			return;
 		}
-		const line = `[debug] ${message}`;
-		console.log(line);
-		output.appendLine(line);
+		// const line = `[debug] ${message}`;
+		// console.log(line);
+		// output.appendLine(line);
 	};
 
 	clientPool = new GeminiClientPool(debug);
