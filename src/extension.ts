@@ -9,7 +9,9 @@ const execFileAsync = promisify(execFile);
 const MAX_SECTION_LENGTH = 3000;
 // Soft cap for git stdout so large diffs do not blow up the prompt or buffers.
 const GIT_STDOUT_SOFT_LIMIT = 40000;
-// Gemini CLI core is most stable with Flash for short commit messages.
+// Commit messages can include a subject plus a body, so keep enough headroom for longer replies.
+const MAX_OUTPUT_TOKENS = 4096;
+// Use the Gemini 3 Flash preview model for short commit messages.
 const MODEL_CANDIDATES = ['gemini-2.5-flash'] as const;
 
 type GitRepositoryLike = {
@@ -306,7 +308,7 @@ async function generateCommitMessage(
 		config: {
 			temperature: 0.2,
 			topP: 1,
-			maxOutputTokens: 256,
+			maxOutputTokens: MAX_OUTPUT_TOKENS,
 		},
 	};
 
