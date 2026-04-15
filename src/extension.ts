@@ -157,8 +157,6 @@ const M = {
 		processing: () => (isJapanese() ? '$(sync~spin) コミットメッセージを生成しています...' : '$(sync~spin) Generating commit message...'),
 	},
 	commitArea: {
-		geminiCoreApi: () => (isJapanese() ? 'Gemini CLI core 経由でコミットメッセージをコピーしました。' : 'Copied commit message via Gemini CLI core.'),
-		copiedScm: () => (isJapanese() ? 'SCM inputBox にコミットメッセージをコピーしました。' : 'Copied commit message to SCM input box.'),
 		warnNoAccess: () => (isJapanese() ? 'コミットメッセージ欄にアクセスできませんでした。' : 'Unable to access commit message input.'),
 		errorSet: (e: string) => (isJapanese() ? `コミットメッセージの設定に失敗しました: ${e}` : `Failed to set commit message: ${e}`),
 	},
@@ -224,8 +222,7 @@ export async function activate(context: vscode.ExtensionContext) {
 
 			const { generator, authType } = await (clientPool?.getClient(workspaceDir) ?? Promise.reject(new Error('Gemini client pool is not available.')));
 			debug(`gemini authType=${authType}`);
-			output.appendLine(`[info] model candidates: ${MODEL_CANDIDATES.join(', ')}`);
-			const { result, model } = await generateCommitMessage(generator, prompt, debug, output);
+			const { result, model } = await generateCommitMessage(generator, prompt, debug);
 			debug(`generateContent completed: model=${model} ${describeResult(result)}`);
 
 			if (!isCurrentRun(activeRuns, workspaceKey, currentRunId)) {
@@ -303,7 +300,6 @@ async function generateCommitMessage(
 	generator: GeminiRuntime['generator'],
 	prompt: string,
 	debug: (message: string) => void,
-	output: vscode.OutputChannel,
 ): Promise<GenerateCommitMessageResult> {
 	const requestBase = {
 		contents: [{ role: 'user', parts: [{ text: prompt }] }],
@@ -324,7 +320,6 @@ async function generateCommitMessage(
 				model,
 			};
 
-			output.appendLine(`[info] generateContent attempt ${index + 1}/${MODEL_CANDIDATES.length}: model=${model}${pass > 0 ? ' (retry)' : ''}`);
 			debug(`generateContent request: model=${model} promptLength=${prompt.length} pass=${pass + 1}`);
 
 			try {
@@ -339,31 +334,8 @@ async function generateCommitMessage(
 
 				lastError = new Error(`Model ${model} returned no valid commit message.`);
 				debug(`generateContent returned empty content: model=${model}`);
-				output.appendLine(`[warn] generateContent returned empty content on model=${model}`);
-				if (index < MODEL_CANDIDATES.length - 1) {
-					output.appendLine(`[info] trying fallback model=${MODEL_CANDIDATES[index + 1]}`);
-					continue;
-				}
 			} catch (error) {
-				const description = describeError(error);
-				const diagnostics = getErrorDiagnostics(error);
-				debug(`generateContent failed: model=${model} error=${description}`);
-				output.appendLine(`[warn] generateContent failed on model=${model}`);
-				output.appendLine(`[warn] name=${diagnostics.name} status=${formatOptionalValue(diagnostics.status)} code=${formatOptionalValue(diagnostics.code)}`);
-				output.appendLine(`[warn] message=${diagnostics.message}`);
-				if (diagnostics.stack) {
-					output.appendLine(`[warn] stack=${oneLine(diagnostics.stack)}`);
-				}
-				const retryAfterSeconds = extractRetryAfterSeconds(description);
-				if (retryAfterSeconds !== undefined) {
-					output.appendLine(`[hint] model capacity may recover after about ${retryAfterSeconds}s`);
-				}
-
-				if (index < MODEL_CANDIDATES.length - 1 && shouldRetryWithFallbackModel(error)) {
-					output.appendLine(`[info] model lookup failed, retrying with fallback model=${MODEL_CANDIDATES[index + 1]}`);
-					continue;
-				}
-
+				debug(`generateContent failed: model=${model} error=${describeError(error)}`);
 				lastError = error instanceof Error ? error : new Error(toErrorMessage(error));
 			}
 		}
@@ -451,38 +423,6 @@ function oneLine(message: string): string {
 	return message.replace(/\s+/g, ' ').trim();
 }
 
-function shouldRetryWithFallbackModel(error: unknown): boolean {
-	const diagnostics = getErrorDiagnostics(error);
-	const message = diagnostics.message.toLowerCase();
-	return (
-		diagnostics.name === 'ModelNotFoundError'
-		|| diagnostics.status === 404
-		|| diagnostics.code === 404
-		|| diagnostics.code === '404'
-		|| message.includes('requested entity was not found')
-		|| message.includes('model not found')
-		|| message.includes('unsupported model')
-		|| [
-			'capacity',
-			'quota',
-			'rate limit',
-			'resource exhausted',
-			'unavailable',
-			'too many requests',
-			'429',
-		].some(token => message.includes(token))
-	);
-}
-
-function extractRetryAfterSeconds(message: string): number | undefined {
-	const match = /(?:reset after|retry after)\s+(\d+)\s*s/i.exec(message);
-	if (!match) {
-		return undefined;
-	}
-	const value = Number(match[1]);
-	return Number.isFinite(value) ? value : undefined;
-}
-
 function extractGeneratedMessage(result: unknown): string | undefined {
 	if (typeof result === 'string') {
 		return result;
@@ -558,7 +498,6 @@ async function setCommitMessage(message: string, output: vscode.OutputChannel, w
 			const targetRepo = selectRepositoryForCommit(repos, workspaceDir);
 			if (targetRepo?.inputBox) {
 				targetRepo.inputBox.value = message;
-				output.appendLine(M.commitArea.geminiCoreApi());
 				return;
 			}
 		}
@@ -566,7 +505,6 @@ async function setCommitMessage(message: string, output: vscode.OutputChannel, w
 		const scmAny = vscode.scm as unknown as { inputBox?: { value: string } };
 		if (scmAny && scmAny.inputBox) {
 			scmAny.inputBox.value = message;
-			output.appendLine(M.commitArea.copiedScm());
 			return;
 		}
 

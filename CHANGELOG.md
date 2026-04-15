@@ -1,5 +1,9 @@
 # Change Log
 
+## 0.3.5
+
+- Added separate English and Japanese prompt-intro settings so you can customize the instructions shown before the Git context.
+
 ## 0.3.1
 
 - Switched authentication to Gemini CLI Core so the extension reuses Gemini CLI sign-in state from `~/.gemini` instead of requiring an API key.
