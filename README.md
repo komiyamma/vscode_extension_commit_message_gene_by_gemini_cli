@@ -1,6 +1,6 @@
 [Japanese README](README.ja.md)
 
-[![Version](https://img.shields.io/badge/version-v0.3.5-4094ff.svg)](https://marketplace.visualstudio.com/items?itemName=komiyamma.commit-message-gene-by-gemini-cli)
+[![Version](https://img.shields.io/badge/version-v0.3.7-4094ff.svg)](https://marketplace.visualstudio.com/items?itemName=komiyamma.commit-message-gene-by-gemini-cli)
 [![MIT License](https://img.shields.io/badge/license-MIT-blue.svg?style=flat)](LICENSE)
 ![Windows 10|11](https://img.shields.io/badge/Windows-_10_|_11-6479ff.svg?logo=windows&logoColor=white)
 
@@ -31,7 +31,7 @@ It uses Gemini CLI authentication handled by `@google/gemini-cli-core`, so no AP
 
 ## Requirements
 
-- VS Code with Git available in the workspace
+- VSCode with Git available in the workspace
 - Gemini CLI sign-in is available through the core package, or Application Default Credentials are configured in Cloud Shell / GCE-style environments
 - Gemini CLI stores its auth state under `~/.gemini` by default, or under `%GEMINI_CLI_HOME%/.gemini` if `GEMINI_CLI_HOME` is set
 - Built-in VSCode Git extension is enabled

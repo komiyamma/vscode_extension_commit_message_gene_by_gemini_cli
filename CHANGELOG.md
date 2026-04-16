@@ -1,5 +1,9 @@
 # Change Log
 
+## 0.3.7
+
+- Removed the proposed SCM input box menu setting from the manifest so the extension no longer depends on `enabledApiProposals`.
+
 ## 0.3.5
 
 - Added separate English and Japanese prompt-intro settings so you can customize the instructions shown before the Git context.

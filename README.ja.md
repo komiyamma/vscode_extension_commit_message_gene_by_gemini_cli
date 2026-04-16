@@ -1,6 +1,6 @@
 [English README](README.md)
 
-[![Version](https://img.shields.io/badge/version-v0.3.5-4094ff.svg)](https://marketplace.visualstudio.com/items?itemName=komiyamma.commit-message-gene-by-gemini-cli)
+[![Version](https://img.shields.io/badge/version-v0.3.7-4094ff.svg)](https://marketplace.visualstudio.com/items?itemName=komiyamma.commit-message-gene-by-gemini-cli)
 [![MIT License](https://img.shields.io/badge/license-MIT-blue.svg?style=flat)](LICENSE)
 ![Windows 10|11](https://img.shields.io/badge/Windows-_10_|_11-6479ff.svg?logo=windows&logoColor=white)
 
@@ -31,7 +31,7 @@
 
 ## 要件
 
-- VS Code と Git が利用できること
+- VSCode と Git が利用できること
 - Gemini CLI のサインインが使えること、または Cloud Shell / GCE 系の環境で ADC が使えること
 - Gemini CLI の認証状態は既定で `~/.gemini` に保存され、`GEMINI_CLI_HOME` が設定されている場合はその配下の `.gemini` を参照します
 - VSCode の組み込み Git 拡張が有効であること
