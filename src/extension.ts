@@ -6,9 +6,9 @@ import * as path from 'path';
 const execFileAsync = promisify(execFile);
 
 // Keep prompt input bounded so the model receives a stable, digestible payload.
-const MAX_SECTION_LENGTH = 3000;
+const MAX_SECTION_LENGTH = 4096;
 // Soft cap for git stdout so large diffs do not blow up the prompt or buffers.
-const GIT_STDOUT_SOFT_LIMIT = 40000;
+const GIT_STDOUT_SOFT_LIMIT = 4096;
 // Commit messages can include a subject plus a body, so keep enough headroom for longer replies.
 const MAX_OUTPUT_TOKENS = 4096;
 // Use the Gemini 3 Flash preview model for short commit messages.

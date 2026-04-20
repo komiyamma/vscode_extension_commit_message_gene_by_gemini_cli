@@ -1,5 +1,9 @@
 # Change Log
 
+## 0.3.8
+
+- 内部パラメータの調整: 各セクションの最大長 (`MAX_SECTION_LENGTH`) を 4096 に拡張し、Git 出力ソフト制限 (`GIT_STDOUT_SOFT_LIMIT`) を 4096 に調整して、より安定したプロンプト構築を可能にした。
+
 ## 0.3.7
 
 - マニフェストから提案 API の SCM 入力欄メニュー設定を削除し、`enabledApiProposals` に依存しないようにした。

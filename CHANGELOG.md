@@ -1,5 +1,9 @@
 # Change Log
 
+## 0.3.8
+
+- Adjusted internal parameters: increased `MAX_SECTION_LENGTH` to 4096 and tightened `GIT_STDOUT_SOFT_LIMIT` to 4096 to ensure stable prompt sizes.
+
 ## 0.3.7
 
 - Removed the proposed SCM input box menu setting from the manifest so the extension no longer depends on `enabledApiProposals`.
